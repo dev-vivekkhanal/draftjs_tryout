@@ -264,6 +264,7 @@ const CustomEditor = () => {
   const clearAllHandler = () => {
     localStorage.clear();
     setEditorState(EditorState.createEmpty());
+    alert("Document Cleared!");
   };
 
   return (
