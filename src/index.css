@@ -64,6 +64,34 @@ h1 {
   transform: scale(95%);
 }
 
+.clear_container {
+  width: 80%;
+  margin: 0 auto;
+}
+
+.clear_btn {
+  display: block;
+  margin-left: auto;
+  background-color: #f82e0a54;
+  transition: all 0.3s ease-in-out;
+  padding: 10px 3rem;
+  font-weight: 600;
+  color: white;
+  font-size: 1rem;
+  outline: none;
+  border: 0px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.clear_btn:hover {
+  background-color: #f82e0a;
+}
+
+.clear_btn:active {
+  transform: scale(95%);
+}
+
 .editor_container {
   width: 80%;
   margin: 0 auto;
@@ -89,7 +117,8 @@ h1 {
     grid-column-start: 3;
   }
 
-  .save_btn {
+  .save_btn,
+  .clear_btn {
     padding: 10px 4rem;
     font-size: 1.2rem;
   }

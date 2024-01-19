@@ -5,11 +5,11 @@ import {
   RichUtils,
   Modifier,
   getDefaultKeyBinding,
-  ContentState,
   SelectionState,
+  convertFromRaw,
+  convertToRaw,
 } from "draft-js";
 import "draft-js/dist/Draft.css";
-// import "../Editor.css";
 
 const CustomEditor = () => {
   const [editorState, setEditorState] = useState(
@@ -18,53 +18,42 @@ const CustomEditor = () => {
   );
   const editorRef = useRef(null);
 
+  const loadContentFromLocalStorage = () => {
+    const savedContent = localStorage.getItem("editorContent");
+    const savedCursorPosition = localStorage.getItem("cursorPosition");
+
+    if (savedContent) {
+      const rawContentState = JSON.parse(savedContent);
+      const contentState = convertFromRaw(rawContentState);
+
+      let editorState;
+
+      if (savedCursorPosition) {
+        const cursorPosition = JSON.parse(savedCursorPosition);
+        const selection = new SelectionState(cursorPosition);
+
+        // Use EditorState.moveFocusToEnd to set the cursor position at the end
+        editorState = EditorState.createWithContent(contentState);
+        editorState = EditorState.moveFocusToEnd(editorState);
+
+        // Now, apply the saved cursor position
+        editorState = EditorState.forceSelection(editorState, selection);
+      } else {
+        // If no saved cursor position, create EditorState without selection
+        editorState = EditorState.createWithContent(contentState);
+      }
+
+      setEditorState(editorState);
+    }
+  };
+
   // Auto-focus the editor when the component mounts
   useEffect(() => {
     if (editorRef.current) {
       editorRef.current.focus();
     }
 
-    // Load content from local storage on component mount
-    // const savedContent = localStorage.getItem("editorContent");
-    // if (savedContent) {
-    //   const contentState = EditorState.createWithContent(
-    //     EditorState.createWithText(savedContent).getCurrentContent()
-    //   );
-    //   setEditorState(contentState);
-    // }
-
-    const savedContent = localStorage.getItem("editorContent");
-    const savedCursorPos = localStorage.getItem("cursorPosition");
-    const savedInlineStyles = localStorage.getItem("editorInlineStyles");
-
-    if (savedContent) {
-      let editorState;
-
-      if (savedCursorPos) {
-        // If there is saved selection, create EditorState with selection
-        const selectionState = JSON.parse(savedCursorPos);
-        editorState = EditorState.createWithContent(
-          EditorState.createWithText(savedContent).getCurrentContent(),
-          null, // Use default decorator
-          selectionState
-        );
-      } else if (savedInlineStyles) {
-        // If there are saved inline styles, apply them to the content
-        const inlineStyles = JSON.parse(savedInlineStyles);
-        const contentState = ContentState.createFromText(
-          savedContent,
-          inlineStyles
-        );
-        editorState = EditorState.createWithContent(contentState);
-      } else {
-        // If no saved selection, create EditorState without selection
-        editorState = EditorState.createWithContent(
-          EditorState.createWithText(savedContent).getCurrentContent()
-        );
-      }
-
-      setEditorState(editorState);
-    }
+    loadContentFromLocalStorage();
   }, []);
 
   // Function to update the editor state
@@ -253,37 +242,65 @@ const CustomEditor = () => {
     return getDefaultKeyBinding(e);
   };
 
-  //   Save content to local storage
+  //  Save content in Local Storage
   const saveContentToLocalStorage = (state) => {
-    const content = state.getCurrentContent().getPlainText();
-    localStorage.setItem("editorContent", content);
+    const contentState = state.getCurrentContent();
 
-    const selection = JSON.stringify(state.getSelection().toJSON());
-    localStorage.setItem("cursorPosition", selection);
+    // Save content state
+    const rawContentState = JSON.stringify(convertToRaw(contentState));
+    localStorage.setItem("editorContent", rawContentState);
 
-    const inlineStyles = state.getCurrentInlineStyle();
-    localStorage.setItem(
-      "editorInlineStyles",
-      JSON.stringify(inlineStyles.toArray())
-    );
+    // Save cursor position
+    const selection = state.getSelection();
+    const cursorPosition = {
+      anchorKey: selection.getAnchorKey(),
+      anchorOffset: selection.getAnchorOffset(),
+    };
+    localStorage.setItem("cursorPosition", JSON.stringify(cursorPosition));
+
+    alert("Document Updated!");
+  };
+
+  const clearAllHandler = () => {
+    localStorage.clear();
+    setEditorState(EditorState.createEmpty());
   };
 
   return (
-    <div>
-      <button onClick={() => saveContentToLocalStorage(editorState)}>
-        Save
-      </button>
-      {/* Draft.js Editor Component */}
-      <Editor
-        ref={editorRef}
-        editorState={editorState}
-        onChange={onChange}
-        handleBeforeInput={handleBeforeInput}
-        customStyleMap={styleMap}
-        handleKeyCommand={handleKeyCommand}
-        keyBindingFn={keyBindingFn}
-        placeholder="Start writting..."
-      />
+    <div className=" app_container">
+      {/* heading and button */}
+      <div className="bg_light_slate">
+        <div className="heading_and_button_container">
+          <h1 className="heading ">Demo Editor by Vivek Khanal</h1>
+          <div className="btn_container">
+            <button
+              className="save_btn"
+              onClick={() => saveContentToLocalStorage(editorState)}
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+      {/* editor */}
+      <div className="editor_container">
+        {/* Draft.js Editor Component */}
+        <Editor
+          ref={editorRef}
+          editorState={editorState}
+          onChange={onChange}
+          handleBeforeInput={handleBeforeInput}
+          customStyleMap={styleMap}
+          handleKeyCommand={handleKeyCommand}
+          keyBindingFn={keyBindingFn}
+          placeholder="Start writting here..."
+        />
+      </div>
+      <div className="clear_container">
+        <button className="clear_btn" onClick={clearAllHandler}>
+          Clear All
+        </button>
+      </div>
     </div>
   );
 };
